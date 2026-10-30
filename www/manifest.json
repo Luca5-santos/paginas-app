@@ -1,0 +1,37 @@
+{
+  "name": "páginas — sua estante, sua turma",
+  "short_name": "páginas",
+  "description": "Sua estante, sua turma. Organize suas leituras e registre suas histórias.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f0fb",
+  "theme_color": "#7438ef",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "./index.html",
+  "lang": "pt-BR",
+  "categories": [
+    "books",
+    "lifestyle",
+    "social"
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar leitura",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "./icon.png",
+          "sizes": "512x512"
+        }
+      ]
+    }
+  ]
+}
