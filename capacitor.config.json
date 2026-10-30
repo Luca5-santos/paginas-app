@@ -1,0 +1,8 @@
+{
+  "appId": "com.entrepaginas.app",
+  "appName": "páginas",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": { "iconColor": "#7438EF" }
+  }
+}
