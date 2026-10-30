@@ -20,6 +20,22 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Preparar a pasta www (acha os arquivos do app onde estiverem)
+        run: |
+          mkdir -p www
+          for f in index.html manifest.json sw.js icon.png apple-touch-icon.png; do
+            if [ ! -f "www/$f" ]; then
+              p=$(find . -type f -name "$f" -not -path "./node_modules/*" -not -path "./android/*" -not -path "./.git/*" -not -path "./www/*" | head -1)
+              if [ -n "$p" ]; then cp "$p" "www/$f"; fi
+            fi
+          done
+          echo "Conteúdo da pasta www:"
+          ls -la www
+          if [ ! -f www/index.html ]; then
+            echo "ERRO: não encontrei o arquivo index.html no repositório. Envie a pasta www do zip para o GitHub."
+            exit 1
+          fi
+
       - name: Instalar dependências
         run: npm install
 
