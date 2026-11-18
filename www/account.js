@@ -74,51 +74,86 @@
    if (account) pending = setTimeout(() => sync(),700);
  }
  window.queueReaderSync = queue;
+ const loginForm = $('readerLogin');
+ const loginMessage = $('readerMessage');
+ const signOutButton = $('readerSignOut');
+ let firstSession = true;
+ function allowLogin(enabled) {
+   for (const control of loginForm.querySelectorAll('button')) control.disabled = !enabled;
+ }
+ async function signOut() {
+   if (!account || signOutButton.disabled) return;
+   signOutButton.disabled = true;
+   try {
+     const {error} = await client.auth.signOut({scope:'local'});
+     if (error) throw error;
+     applySession(null);
+   } catch {
+     toast('Não foi possível sair. Tente novamente.');
+   } finally { signOutButton.disabled = false; }
+ }
+ signOutButton.onclick = signOut;
  window.openReaderAccount = () => {
-   if (!client) return toast('Conecte-se à internet e recarregue o app para entrar.');
-   if (account) {
-     openModal('Sua conta','<p>'+esc(account.email)+'</p><p>'+esc(button.textContent)+'</p>'+
-       (conflict ? '<p>O aparelho e a nuvem têm alterações. Exporte uma cópia antes de escolher a versão.</p><button class="btn ghost" id="syncCopy">Exportar cópia</button> <button class="btn" id="syncLocal">Manter dados do aparelho</button> <button class="btn ghost" id="syncCloud">Manter dados da nuvem</button>' : '<button class="btn" id="syncNow">Sincronizar agora</button>')+
-       ' <button class="btn ghost" id="syncExit">Sair</button>');
-     for(const [id,action] of Object.entries({syncCopy:exportData,syncLocal:()=>sync('local'),syncCloud:()=>sync('remote'),syncNow:()=>sync(),syncExit:async()=>{
-       const {error} = await client.auth.signOut({scope:'local'});
-       if(error) toast('Não foi possível sair. Tente novamente.');
-     }})) {
-       if($(id)) $(id).onclick = () => { if(id !== 'syncCopy') closeModal(); action(); };
-     }
-     return;
+   if (!account) return;
+   openModal('Sua conta','<p>'+esc(account.email)+'</p><p>'+esc(button.textContent)+'</p>'+
+     (conflict ? '<p>O aparelho e a nuvem têm alterações. Exporte uma cópia antes de escolher a versão.</p><button class="btn ghost" id="syncCopy">Exportar cópia</button> <button class="btn" id="syncLocal">Manter dados do aparelho</button> <button class="btn ghost" id="syncCloud">Manter dados da nuvem</button>' : '<button class="btn" id="syncNow">Sincronizar agora</button>')+
+     ' <button class="btn ghost" id="syncExit">Sair da conta</button>');
+   for (const [id,action] of Object.entries({syncCopy:exportData,syncLocal:()=>sync('local'),syncCloud:()=>sync('remote'),syncNow:()=>sync(),syncExit:signOut})) {
+     if ($(id)) $(id).onclick = () => { if(id !== 'syncCopy') closeModal(); action(); };
    }
-   openModal('Conta EntrePaginas','<form id="readerLogin"><div class="field"><label for="readerEmail">E-mail</label><input id="readerEmail" name="email" type="email" autocomplete="email" required></div><div class="field"><label for="readerPassword">Senha</label><input id="readerPassword" name="password" type="password" minlength="6" autocomplete="current-password" required></div><p id="readerMessage" role="status"></p><button class="btn" value="login">Entrar</button> <button class="btn ghost" value="signup">Criar conta</button></form>');
-   $('readerLogin').onsubmit = async event => {
-     event.preventDefault();
-     const form = event.currentTarget, message = $('readerMessage');
-     if(form.dataset.busy) return;
-     form.dataset.busy = '1';
-     message.textContent = 'Aguarde…';
-     const credentials = {email:form.elements.email.value.trim(),password:form.elements.password.value};
-     const signup = event.submitter?.value === 'signup';
-     try {
-       const {error} = await (signup ? client.auth.signUp(credentials) : client.auth.signInWithPassword(credentials));
-       message.textContent = error ? (signup ? 'Não foi possível criar a conta. Confira o e-mail e tente novamente.' : 'Confira seu e-mail, senha e a confirmação do cadastro.') : (signup ? 'Confirme pelo e-mail e volte para entrar.' : 'Abrindo sua conta…');
-     } catch { message.textContent = 'Sem conexão. Tente novamente.'; }
-     finally { delete form.dataset.busy; }
-   };
  };
- paint(client ? 'Entre para sincronizar' : 'Conta indisponível offline');
- if (!client) return;
- client.auth.onAuthStateChange((_event,session) => setTimeout(() => {
+ function applySession(session) {
    const next = session?.user;
-   if(next?.id !== account?.id) {
+   if (firstSession || next?.id !== account?.id) {
+     firstSession = false;
      account = next;
      conflict = null;
      storageScope = next ? 'reader:'+next.id+':' : '';
-     closeModal();
+     if (!next) {
+       $('readerApp').inert = true;
+       document.body.classList.remove('reader-signed-in');
+     }
+     if ($('modal').classList.contains('open')) closeModal();
+     load();
      showPage('home');
-     showLocal();
-     paint(next ? 'Conectando sua conta…' : 'Entre para sincronizar');
+     renderAll();
+     syncNative();
+     $('readerApp').inert = !next;
+     document.body.classList.toggle('reader-signed-in',Boolean(next));
+     loginForm.reset();
+     loginMessage.textContent = '';
+     paint(next ? 'Conectando sua conta…' : 'Conta');
+     window.scrollTo(0,0);
    }
+   allowLogin(true);
    queue();
- },0));
+ }
+ loginForm.onsubmit = async event => {
+   event.preventDefault();
+   if (!client || loginForm.dataset.busy) return;
+   loginForm.dataset.busy = '1';
+   const signup = event.submitter?.value === 'signup';
+   const credentials = {email:loginForm.elements.email.value.trim(),password:loginForm.elements.password.value};
+   allowLogin(false);
+   loginMessage.textContent = 'Aguarde…';
+   try {
+     const {data:result,error} = await (signup ? client.auth.signUp(credentials) : client.auth.signInWithPassword(credentials));
+     if (result?.session) applySession(result.session);
+     else loginMessage.textContent = error
+       ? (signup ? 'Não foi possível criar a conta. Confira o e-mail e tente novamente.' : 'Confira seu e-mail e sua senha e tente novamente.')
+       : 'Confirme o cadastro pelo e-mail e depois entre.';
+   } catch { loginMessage.textContent = 'Sem conexão. Tente novamente.'; }
+   finally {
+     loginForm.elements.password.value = '';
+     delete loginForm.dataset.busy;
+     allowLogin(true);
+   }
+ };
+ if (!client) {
+   loginMessage.textContent = 'Não foi possível carregar o login. Verifique a conexão e reabra a página ou o aplicativo.';
+   return;
+ }
+ client.auth.onAuthStateChange((_event,session) => setTimeout(() => applySession(session),0));
  window.addEventListener('online',queue);
  document.addEventListener('visibilitychange',() => { if(!document.hidden) queue(); });
  setInterval(() => { if(!document.hidden && !document.querySelector('.modal.open')) sync(); },15000);

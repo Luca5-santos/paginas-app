@@ -242,10 +242,31 @@ div.cover:empty{display:grid;place-items:center;background:linear-gradient(145de
 .is-app .sheet{padding-top:18px}
 
 .profile-cover{height:84px}.profile-top{margin-top:-34px!important;align-items:flex-start}.profile-top h2{margin-top:40px!important}.profile-top>div:last-child{align-self:flex-end}
-.book-stack{display:flex;flex-direction:column-reverse;gap:3px;align-items:center;width:120px;flex:0 0 120px}#profileShelf{padding:12px;border-radius:14px;margin-bottom:14px}</style>
+.book-stack{display:flex;flex-direction:column-reverse;gap:3px;align-items:center;width:120px;flex:0 0 120px}#profileShelf{padding:12px;border-radius:14px;margin-bottom:14px}body:not(.reader-signed-in) #readerApp,body.reader-signed-in #readerGate{display:none!important}
+.reader-gate{min-height:100dvh;display:grid;place-items:center;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 12% 8%,#ded1f5,transparent 62%),#f8f4fc;color:#302543}
+.reader-gate-card{width:min(100%,420px);background:#fff;padding:28px;border-radius:24px;box-shadow:0 18px 54px #4b326a22}
+.reader-gate-card h1{font-size:28px;margin:10px 0 4px}
+.reader-gate-card form{margin-top:22px}
+.reader-gate-actions{display:flex;gap:8px;flex-wrap:wrap}
+</style>
 </head>
-<body><div class="app">
-<header class="top"><div class="brand"><img class="logo" src="icon.png" alt=""><div><h1>páginas</h1></div></div><div class="top-actions"><button class="icon-btn" onclick="showPage('descobrir')" aria-label="Buscar livros"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg></button><button class="avatar" id="topAvatar" onclick="showPage('perfil')" aria-label="Abrir perfil"></button></div></header>
+<body>
+<section id="readerGate" class="reader-gate" aria-labelledby="readerGateTitle">
+  <div class="reader-gate-card">
+    <img src="icon.png" width="56" height="56" alt="">
+    <h1 id="readerGateTitle">EntrePaginas</h1>
+    <p class="mini">Entre para acessar sua estante e sincronizar suas leituras.</p>
+    <form id="readerLogin">
+      <div class="field"><label for="readerEmail">E-mail</label><input id="readerEmail" name="email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="readerPassword">Senha</label><input id="readerPassword" name="password" type="password" autocomplete="current-password" required></div>
+      <p id="readerMessage" class="mini" role="status">Verificando sessão…</p>
+      <div class="reader-gate-actions"><button class="btn" value="login" disabled>Entrar</button><button class="btn ghost" value="signup" disabled>Criar conta</button></div>
+    </form>
+    <noscript><p>Ative o JavaScript para acessar sua conta.</p></noscript>
+  </div>
+</section>
+<div class="app" id="readerApp" inert>
+<header class="top"><div class="brand"><img class="logo" src="icon.png" alt=""><div><h1>páginas</h1></div></div><div class="top-actions"><button class="btn ghost small" id="readerSignOut" type="button">Sair</button><button class="icon-btn" onclick="showPage('descobrir')" aria-label="Buscar livros"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg></button><button class="avatar" id="topAvatar" onclick="showPage('perfil')" aria-label="Abrir perfil"></button></div></header>
 <main>
 <section id="home" class="page active"><div class="page-head"><h2 class="hello">Início</h2><button class="btn ghost small" id="homeEditBtn" onclick="toggleHomeEdit()"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Editar</span></button></div>
 <button class="searchpill" onclick="showPage('descobrir')"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg><span>Buscar livros, autores ou ISBN</span></button>
